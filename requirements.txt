@@ -1,0 +1,2 @@
+beautifulsoup4~=4.13.0
+waybackpy~=3.0.0
