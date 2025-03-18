@@ -2,6 +2,16 @@
 
 Automatically archive a website on the Internet Archive if it changed since it was last seen.
 
+## Installation
+
+It is recommended that this script is run in a virtual environment.
+This can be set up by running:
+
+```shell
+python3 -m venv venv
+pip install -r requirements.txt
+```
+
 ## Running
 
 ```
