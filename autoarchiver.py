@@ -77,14 +77,14 @@ def save_webpage(url: str):
 
 def autoarchive(url: str, backup_file: str, skip_first: bool = False):
     current_content = get_webpage_text(url)
-    previous_content = ""
-    if backup_exists(backup_file):
+    backup_found = backup_exists(backup_file)
+    if backup_found:
         previous_content = get_backup_text(backup_file)
 
-    if skip_first:
+    if skip_first and not backup_found:
         logger.info("No backup file found. Not archiving")
     else:
-        if current_content != previous_content:
+        if backup_found and current_content != previous_content:
             logger.info("Archiving webpage. Please wait")
             save_webpage(url)
         else:

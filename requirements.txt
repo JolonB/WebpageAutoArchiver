@@ -1,2 +1,2 @@
-beautifulsoup4~=4.0
-waybackpy~=3.0
+beautifulsoup4>=4.0
+waybackpy>=2.0
