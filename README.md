@@ -30,11 +30,11 @@ This script will only archive the webpage at most one time each time it runs.
 To have it update automatically, a cronjob should be set up to launch the script periodically.
 Running more often than every 15 minutes is not recommended as requests may be limited by the Internet Archive.
 
-For example, if the code has been set up in the home directory with a virtual environment named `venv`, the crontab may look like (be sure to set the script directory):
+For example, if the code has been set up in the `~/scripts/` directory with a virtual environment named `venv`, the crontab may look like (be sure to set the script directory):
 
 ```
 # Automatically archive example.com daily at 12pm and log to example_com.log
-0 12 * * * cd /home/username/scripts/WebpageAutoArchiver && venv/bin/python autoarchiver.py https://example.com example_com_backup.txt >> example_com.log
+0 12 * * * cd scripts/WebpageAutoArchiver && venv/bin/python autoarchiver.py https://example.com example_com.backup >> example_com.log
 ```
 
 ## How it works
