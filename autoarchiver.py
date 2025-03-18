@@ -8,7 +8,12 @@ import waybackpy.exceptions
 from bs4 import BeautifulSoup
 from waybackpy import WaybackMachineSaveAPI
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(
+    format="[%(asctime)s] %(levelname)-8s %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    stream=sys.stdout,
+    level=logging.INFO,
+)
 logger = logging.getLogger("autoarchiver")
 
 parser = argparse.ArgumentParser()
@@ -78,7 +83,7 @@ def autoarchive(url: str, backup_file: str, skip_first: bool = False):
 
     if skip_first:
         logger.info("No backup file found. Not archiving")
-    else: 
+    else:
         if current_content != previous_content:
             logger.info("Archiving webpage. Please wait")
             save_webpage(url)
@@ -90,4 +95,4 @@ def autoarchive(url: str, backup_file: str, skip_first: bool = False):
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    autoarchive(args.url, args.backup_file)
+    autoarchive(args.url, args.backup_file, args.skip_first)
