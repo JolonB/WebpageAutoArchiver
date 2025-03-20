@@ -58,6 +58,8 @@ def get_webpage_text(url: str) -> str:
         logger.error("Invalid response from webpage ({})".format(site_data.status_code))
         exit(1)
     site_contents = BeautifulSoup(site_data.text, "html.parser").get_text()
+    # Remove \r because they can cause problems with the file comparison (not sure why)
+    site_contents = site_contents.replace("\r", "")
     return site_contents
 
 
