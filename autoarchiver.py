@@ -8,6 +8,10 @@ import waybackpy.exceptions
 from bs4 import BeautifulSoup
 from waybackpy import WaybackMachineSaveAPI
 
+USER_AGENT = (
+    "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1"
+)
+
 logging.basicConfig(
     format="[%(asctime)s] %(levelname)-8s %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
@@ -50,7 +54,8 @@ def save_backup(data: str, backup_file: str):
 def get_webpage_text(url: str) -> str:
     logger.debug("Running get_webpage_text")
     try:
-        site_data = requests.get(url)
+        headers = {"User-Agent": USER_AGENT}
+        site_data = requests.get(url, headers=headers)
     except requests.exceptions.MissingSchema as e:
         logger.error("{}".format(e))
         exit(1)
@@ -65,10 +70,7 @@ def get_webpage_text(url: str) -> str:
 
 def save_webpage(url: str):
     logger.debug("Running save_webpage")
-    user_agent = (
-        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1"
-    )
-    save_api = WaybackMachineSaveAPI(url, user_agent)
+    save_api = WaybackMachineSaveAPI(url, USER_AGENT)
     try:
         save_api.save()
     except waybackpy.exceptions.TooManyRequestsError as e:
