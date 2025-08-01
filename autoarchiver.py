@@ -1,4 +1,5 @@
 import argparse
+import difflib
 import logging
 import os
 import requests
@@ -30,7 +31,25 @@ parser.add_argument(
 parser.add_argument(
     "--skip-first",
     action="store_true",
-    help="If backup_file doesn't exist yet, don't archive the page. This can be useful if you recently manually archived it.",
+    help="If backup_file doesn't exist yet, don't archive the page. This can be useful if you recently manually archived it",
+)
+parser.add_argument(
+    "--match-ratio",
+    type=float,
+    default=1.0,
+    help="Webpages with a match ratio below this value will be archived. 1 is the highest and default, so any difference will match"
+)
+parser.add_argument(
+    "-n",
+    "--dry-run",
+    action="store_true",
+    help="Check if webpage has updated without modifying backup or archiving"
+)
+parser.add_argument(
+    "-a",
+    "--always-backup",
+    action="store_true",
+    help="If set, backup the webpage locally if the page isn't archived. -n does not affect this"
 )
 
 
@@ -68,18 +87,21 @@ def get_webpage_text(url: str) -> str:
     return site_contents
 
 
-def save_webpage(url: str):
+def save_webpage(url: str) -> bool:
     logger.debug("Running save_webpage")
     save_api = WaybackMachineSaveAPI(url, USER_AGENT)
     try:
         save_api.save()
     except waybackpy.exceptions.TooManyRequestsError as e:
         logger.error("{}".format(e))
-        exit(1)
+        return False
     logger.info("Webpage saved and viewable at {}".format(save_api.saved_archive))
+    return True
 
 
-def autoarchive(url: str, backup_file: str, skip_first: bool = False):
+def autoarchive(url: str, backup_file: str, skip_first: bool = False, match_ratio: float = 1.0, dry_run: bool = False, always_backup: bool = False):
+    if match_ratio < 0 or match_ratio > 1:
+        raise ValueError("match_ratio must be between 0 and 1 (inclusive)")
     current_content = get_webpage_text(url)
     backup_found = backup_exists(backup_file)
     if backup_found:
@@ -88,15 +110,38 @@ def autoarchive(url: str, backup_file: str, skip_first: bool = False):
     if skip_first and not backup_found:
         logger.info("No backup file found. Not archiving")
     else:
-        if (not backup_found) or (backup_found and current_content != previous_content):
+        to_archive = not backup_found
+        if not to_archive:
+            # Save time by directly comparing strings if match_ratio is default
+            if match_ratio == 1.0:
+                to_archive = current_content != previous_content
+            else:
+                matcher = difflib.SequenceMatcher()
+                # Take average of two ratios, because they can be different
+                matcher.set_seqs(previous_content, current_content)
+                ratio1 = matcher.ratio()
+                matcher.set_seqs(current_content, previous_content)
+                ratio2 = matcher.ratio()
+                ratio = (ratio1 + ratio2) / 2.
+                logger.info("Match ratio: {}".format(round(ratio, 5)))
+                to_archive = ratio < match_ratio
+        if to_archive:
             logger.info("Archiving webpage. Please wait")
-            save_webpage(url)
+            if not dry_run:
+                if save_webpage(url):
+                    # Only create local backup if successfully archived
+                    logger.info("Creating local backup")
+                    save_backup(current_content, backup_file)
         else:
+            # Only create local backup if --always-backup set
             logger.info("Website hasn't changed. Not archiving")
-
-    save_backup(current_content, backup_file)
-
+            if always_backup:
+                logger.info("Creating local backup")
+                save_backup(current_content, backup_file)
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    autoarchive(args.url, args.backup_file, args.skip_first)
+    try:
+        autoarchive(args.url, args.backup_file, args.skip_first, args.match_ratio, args.dry_run, args.always_backup)
+    except ValueError as e:
+        logger.error(e)
